@@ -18,7 +18,7 @@
 #|---------------------------------------------CONSTANTS--------------------------------------------|#
 (define GRID-SIZE 20)
 (define CELL-SIZE 10)
-(define COLORS '(Red Orange Yellow Green Olive Blue Indigo Purple HotPink Chocolate Black))
+(define COLORS '(Red Orange Yellow Green Blue Indigo Purple HotPink SaddleBrown Black))
 #|---------------------------------------------FUNCTIONS--------------------------------------------|#
 
 ;;main : -> World
