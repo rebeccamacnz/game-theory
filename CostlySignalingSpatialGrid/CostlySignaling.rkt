@@ -40,8 +40,8 @@
 (define FALSE-COLOR "red")
 (define BETWEEN-COLOR "white")
 
-(define REWARD 100)
-(define COST 99)
+(define REWARD 2)
+(define COST 1)
 
 
 (define TESTPLAYER1
@@ -574,3 +574,6 @@
 (check-expect (xor true false) true)
 (check-expect (xor false true) true)
 (check-expect (xor false false) false)
+
+#|--- RUN ---|#
+(main GRID-WIDTH GRID-HEIGHT)
