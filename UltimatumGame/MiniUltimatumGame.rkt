@@ -1,6 +1,5 @@
-;; The first three lines of this file were inserted by DrRacket. They record metadata
-;; about the language level of this file in a form that our tools can easily process.
-#reader(lib "htdp-advanced-reader.ss" "lang")((modname MiniUltimatumGame) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #t #t none #f () #f)))
+#lang htdp/asl
+
 (require 2htdp/image)
 (require 2htdp/universe)
 #|-----------------------------------------DATA DEFINITIONS-----------------------------------------|#
@@ -11,7 +10,7 @@
 ; - and the Boolean indicates whether this player is proposing or responding (True = Proposer)
 (define-struct player (propose respond score role))
 
-;;A [Grid X] is a [List [List X]] where each inner list has the same length as the outer list
+;;A [Grid X] is a [List-of [List-of X]] where each inner list has the same length as the outer list
 
 ;;A World is a [Grid Player]
 
@@ -54,14 +53,18 @@
 ;;make-random-player : -> Player
 ;;Produces a random player with a score of 0
 (define (make-random-player)
-  (make-player (add1 (random 10))
-               (add1 (random 10))
+  (make-player (make-random-strategy)
+               (make-random-strategy)
                0 (random-bool)))
 (check-expect (player? (make-random-player)) true)
 (check-expect (in-range? (player-propose (make-random-player)) 1 10) true)
 (check-expect (in-range? (player-respond (make-random-player)) 1 10) true)
 (check-expect (player-score (make-random-player)) 0)
 (check-expect (boolean? (player-role (make-random-player))) true)
+
+;;make-random-strategy : -> Number
+(define (make-random-strategy)
+  (add1 (random 10)))
 
 ;;in-range? : Number Number Number -> Boolean
 ;;Determines if x is in the range [lo,hi]
@@ -155,7 +158,7 @@
 (check-expect (player-respond (update-player-strategy 1 1 (update-scores RANDOM-WORLD1))) 6)
 (check-expect (player-propose (update-player-strategy 1 2 (update-scores RANDOM-WORLD1))) 3)
 
-;;get-player-neighbors : Nat Nat World -> [List Player]
+;;get-player-neighbors : Nat Nat World -> [List-of Player]
 ;;Get the player's neighbors
 (define (get-player-neighbors rowi coli w)
   (local [(define gs (length w))
@@ -174,13 +177,11 @@
 (check-expect (get-player-neighbors 1 1 '((1 2 3) (4 5 6) (7 8 9)))
               '(1 2 3 4 6 7 8 9))
 
-;;get-best-proposer : [List Player] Player -> Player
+;;get-best-proposer : [List-of Player] Player -> Player
 ;;Gets the proposer with the best score
 ;;If there are no proposers, return the player
 (define (get-best-proposer others me)
-  (foldr (λ (p sofar)
-           (if (and (player-role p) (> (player-score p) (player-score sofar))) p sofar))
-         me others))
+  (argmax player-score (cons me others)))
 (check-expect (get-best-proposer empty (make-player 9 5 10 false)) (make-player 9 5 10 false))
 (check-expect (get-best-proposer
                (list (make-player 9 5 10 false)
@@ -189,7 +190,7 @@
                (make-player 8 2 2 false))
               (make-player 9 5 8 true))
 
-;;get-best-responder : [List Player] Player -> Player
+;;get-best-responder : [List-of Player] Player -> Player
 ;;Gets the responder with the best score
 ;;If there are no responders, return the player
 (define (get-best-responder others me)
@@ -204,13 +205,18 @@
                (make-player 8 2 2 false))
               (make-player 9 5 6 false))
 
-;;score-player : [List Player] Player -> Number
+;;score-player : [List-of Player] Player -> Number
 ;;Score the player against all player's of the opposite type
 (define (score-player others me)
   (local [(define opposites (filter (λ (x) (xor (player-role me) (player-role x))) others))]
-    (if (zero? (length opposites)) 0
-        (floor (/ (foldr (λ (p sofar) (+ (battle p me) sofar))
-                         0 opposites) (length opposites))))))
+    (if (zero? (length opposites))
+        0
+        (quotient (total-battle-score me opposites) (length opposites)))))
+
+;;total-battle-score : Player [List-of Player] -> Number
+(define (total-battle-score me opposites)
+  (foldr (λ (p sofar) (+ (battle p me) sofar)) 0 opposites))
+
 (check-expect (score-player
                (list (make-player 6 9 0 false)
                      (make-player 9 9 0 false)
@@ -276,7 +282,7 @@
           (list (make-player 9 3 0 true) (make-player 10 6 0 false) (make-player 3 1 0 true))))
   (empty-scene SCENE-SIZE SCENE-SIZE)))
 
-;;draw-row : [List Player] -> Image
+;;draw-row : [List-of Player] -> Image
 ;;Renders the row as an image
 (define (draw-row lop)
   (foldr (λ (cell sofar) (beside (draw-cell cell) sofar))
